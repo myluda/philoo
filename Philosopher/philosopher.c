@@ -202,6 +202,44 @@ void	init_threads(t_data *datas)
     pthread_mutex_init(&datas->write,NULL);
     pthread_mutex_init(&datas->eat,NULL);
 }
+int		ft_meals(t_data *datas, t_philo *nbphilo, int *stop)
+{
+	if(datas->nbmeals != -1)
+	{
+		if (datas->nbmeals == 0 ||
+			 (datas->all == datas->nbphilo && nbphilo->is_eating == 0))
+		{
+			*stop = 0;
+			return (1);
+		}
+	}
+	return (0);
+}
+void	ft_supervisor(t_data *datas, t_philo *nbphilo)
+{
+	int i;
+	int stop;
+
+	stop = 1;
+	while(stop)
+	{
+		i = 0;
+		while(i < datas->nbphilo && !nbphilo->lastime_eat)
+		{
+			pthread_mutex_lock(&datas->eat);
+			if (ft_meals(datas, &nbphilo[i], &stop))
+				break ;
+			if (nbphilo[i].is_eating == 0 && time_pass(nbphilo[i].lastime_eat) > (unsigned long)datas->timetodie)
+			{
+				ft_print(&nbphilo[i], DIE, time_pass(nbphilo[i].start));
+				stop = 0;
+				break ;
+			}
+			pthread_mutex_unlock(&datas->eat);
+			i++;
+		}
+	}
+}
 
 void    ft_start(t_data *datas)
 {
@@ -218,6 +256,7 @@ void    ft_start(t_data *datas)
 		usleep(100);
 		i++;
 	}
+	ft_supervisor(datas,nbphilo);
 }
 
 int main(int argc , char **argv)
